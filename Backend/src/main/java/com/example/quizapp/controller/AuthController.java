@@ -1,14 +1,22 @@
 package com.example.quizapp.controller;
 
-import com.example.quizapp.model.*;
-import com.example.quizapp.dao.UserDao;
-import com.example.quizapp.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
-import org.springframework.security.authentication.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.quizapp.dao.UserDao;
+import com.example.quizapp.model.AuthRequest;
+import com.example.quizapp.model.AuthResponse;
+import com.example.quizapp.model.User;
+import com.example.quizapp.utils.JwtUtil;
 
 
 @RestController
@@ -34,7 +42,8 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
             String token = jwtUtil.generateToken(request.getUsername());
-            return ResponseEntity.ok(new AuthResponse(token));
+            String role = userDao.findByUsername(request.getUsername()).map(User::getRole).orElse("STUDENT");
+            return ResponseEntity.ok(new AuthResponse(token, role));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
@@ -49,6 +58,7 @@ public class AuthController {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole((request.getRole() != null && !request.getRole().isBlank()) ? request.getRole() : "STUDENT");
         userDao.save(user);
 
         return ResponseEntity.ok("User registered successfully");

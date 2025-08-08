@@ -17,7 +17,13 @@ const Login = () => {
       const response = await authAPI.login({ username, password });
       if (response && response.token) {
         localStorage.setItem('token', response.token);
-        navigate('/');
+        if (response.role) localStorage.setItem('role', response.role);
+        // Route users by role
+        if (response.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/student');
+        }
       } else {
         setError('Invalid credentials or server error.');
       }

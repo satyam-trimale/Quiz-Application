@@ -9,6 +9,8 @@ import QuizList from './pages/QuizList';
 import Quiz from './pages/Quiz';
 import Submit from './pages/Submit';
 import CreateQuiz from './pages/CreateQuiz';
+import AdminDashboard from './pages/AdminDashboard';
+import StudentDashboard from './pages/StudentDashboard';
 import './App.css';
 
 function Layout({ children }) {
@@ -29,6 +31,8 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/student" element={<StudentDashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/quizzes" element={<QuizList />} />

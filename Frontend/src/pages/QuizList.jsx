@@ -1,98 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { quizAPI, questionAPI, requireAuth } from '../services/api';
+import { quizAPI, requireAuth } from '../services/api';
 
 const QuizList = () => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [creatingQuiz, setCreatingQuiz] = useState(false);
-
-  // Category descriptions and icons - you can modify these based on your needs
-  const categoryInfo = {
-    'Programming': { description: 'Test your programming knowledge', icon: '💻' },
-    'Mathematics': { description: 'Challenge your math skills', icon: '📐' },
-    'Science': { description: 'Explore scientific concepts', icon: '🔬' },
-    'History': { description: 'Journey through historical events', icon: '📚' },
-    'Geography': { description: 'Discover the world around you', icon: '🌍' },
-    'Literature': { description: 'Dive into classic and modern literature', icon: '📖' },
-    'Technology': { description: 'Learn about modern technology', icon: '⚡' },
-    'Sports': { description: 'Test your sports knowledge', icon: '⚽' },
-    'Music': { description: 'Explore music theory and history', icon: '🎵' },
-    'General Knowledge': { description: 'Test your general knowledge', icon: '🧠' }
-  };
+  const [startingQuiz, setStartingQuiz] = useState(false);
 
   useEffect(() => {
-    fetchCategories();
+    fetchQuizzes();
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchQuizzes = async () => {
     try {
       setLoading(true);
       setError('');
       
-      console.log('Fetching categories from backend...');
-      const categoryNames = await questionAPI.getAllCategories();
-      console.log('Received categories:', categoryNames);
+      console.log('Fetching quizzes from backend...');
+      const quizList = await quizAPI.getAllQuizzes();
+      console.log('Received quizzes:', quizList);
       
-      // Transform category names into objects with descriptions and icons
-      const categoriesWithInfo = categoryNames.map(categoryName => ({
-        name: categoryName,
-        description: categoryInfo[categoryName]?.description || `Test your knowledge of ${categoryName}`,
-        icon: categoryInfo[categoryName]?.icon || '📝'
-      }));
-      
-      console.log('Processed categories:', categoriesWithInfo);
-      setCategories(categoriesWithInfo);
+      setQuizzes(quizList);
       
     } catch (err) {
-      console.error('Error fetching categories:', err);
-      setError('Failed to load categories. Please try again.');
+      console.error('Error fetching quizzes:', err);
+      setError('Failed to load quizzes. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStartQuiz = async (category) => {
+  const handleStartQuiz = async (quiz) => {
     try {
       // Check authentication first
       if (!requireAuth()) {
         return;
       }
 
-      setCreatingQuiz(true);
+      setStartingQuiz(true);
       setError('');
       
-      console.log('Creating quiz for category:', category.name);
+      console.log('Starting quiz with ID:', quiz.id);
       
-      // Create a quiz for this category
-      const quizTitle = `${category.name} Quiz`;
-      const numQuestions = 10; // You can make this configurable
-      
-      const createResponse = await quizAPI.createQuiz(category.name, numQuestions, quizTitle);
-      console.log('Quiz created, response:', createResponse);
-      
-      // Extract quiz ID from response
-      let quizId;
-      if (typeof createResponse === 'string') {
-        quizId = createResponse;
-      } else if (createResponse && createResponse.id) {
-        quizId = createResponse.id;
-      } else {
-        throw new Error('Invalid quiz creation response');
-      }
-      
-      console.log('Extracted quiz ID:', quizId);
-      
-      // Navigate to the quiz page with the quiz ID
-      navigate(`/quiz/${quizId}`);
+      // Navigate directly to the quiz page with the existing quiz ID
+      navigate(`/quiz/${quiz.id}`);
       
     } catch (err) {
-      console.error('Error creating quiz:', err);
-      setError(`Failed to create quiz: ${err.message}`);
+      console.error('Error starting quiz:', err);
+      setError(`Failed to start quiz: ${err.message}`);
     } finally {
-      setCreatingQuiz(false);
+      setStartingQuiz(false);
     }
   };
 
@@ -116,8 +75,8 @@ const QuizList = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchCategories}
+            <button 
+            onClick={fetchQuizzes}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Try Again
@@ -133,10 +92,10 @@ const QuizList = () => {
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Available Quizzes</h1>
-              <p className="text-gray-600 mt-2">Choose a category to start your quiz</p>
-            </div>
+                      <div>
+            <h1 className="text-3xl font-bold text-gray-800">Available Quizzes</h1>
+            <p className="text-gray-600 mt-2">Choose a quiz to start</p>
+          </div>
             <div className="flex space-x-4">
               <button
                 onClick={() => navigate('/create-quiz')}
@@ -155,42 +114,42 @@ const QuizList = () => {
         </div>
       </div>
 
-      {/* Categories Grid */}
+      {/* Quizzes Grid */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category, index) => (
+          {quizzes.map((quiz, index) => (
             <div
-              key={index}
+              key={quiz.id}
               className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer"
-              onClick={() => !creatingQuiz && handleStartQuiz(category)}
+              onClick={() => !startingQuiz && handleStartQuiz(quiz)}
             >
               <div className="p-6">
-                <div className="text-4xl mb-4">{category.icon}</div>
+                <div className="text-4xl mb-4">📝</div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {category.name}
+                  {quiz.title}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {category.description}
+                  Quiz ID: {quiz.id} • {quiz.questions ? quiz.questions.length : 0} questions
                 </p>
                 <button 
                   className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                    creatingQuiz 
+                    startingQuiz 
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
-                  disabled={creatingQuiz}
+                  disabled={startingQuiz}
                 >
-                  {creatingQuiz ? 'Creating Quiz...' : 'Start Quiz'}
+                  {startingQuiz ? 'Starting Quiz...' : 'Start Quiz'}
                 </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* No Categories Message */}
-        {categories.length === 0 && (
+        {/* No Quizzes Message */}
+        {quizzes.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">No quiz categories available at the moment.</p>
+            <p className="text-gray-600 mb-4">No quizzes available at the moment.</p>
             <button
               onClick={handleBackToHome}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"

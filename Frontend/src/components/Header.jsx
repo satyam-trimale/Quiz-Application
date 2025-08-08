@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { isAuthenticated } from '../services/api';
+import { isAuthenticated, isAdmin } from '../services/api';
 
 const Header = () => {
   const navigate = useNavigate();
   const isLoggedIn = isAuthenticated();
+  const admin = isAdmin();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -26,7 +27,14 @@ const Header = () => {
           <nav className="hidden md:flex space-x-6">
             <Link to="/" className="hover:text-blue-200 transition-colors">Home</Link>
             <Link to="/quizzes" className="hover:text-blue-200 transition-colors">Quizzes</Link>
-            <Link to="/create-quiz" className="hover:text-blue-200 transition-colors">Create Quiz</Link>
+            {admin ? (
+              <>
+                <Link to="/admin" className="hover:text-blue-200 transition-colors">Admin</Link>
+                <Link to="/create-quiz" className="hover:text-blue-200 transition-colors">Create Quiz</Link>
+              </>
+            ) : (
+              <Link to="/student" className="hover:text-blue-200 transition-colors">Student</Link>
+            )}
             <a href="/leaderboard" className="hover:text-blue-200 transition-colors">Leaderboard</a>
             <a href="/profile" className="hover:text-blue-200 transition-colors">Profile</a>
           </nav>

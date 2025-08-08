@@ -1,9 +1,8 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
-// Get token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+// Get token and role from localStorage
+const getAuthToken = () => localStorage.getItem('token');
+const getUserRole = () => localStorage.getItem('role') || 'STUDENT';
 
 // Check if user is authenticated
 export const isAuthenticated = () => {
@@ -11,9 +10,19 @@ export const isAuthenticated = () => {
   return !!token;
 };
 
+export const isAdmin = () => getUserRole() === 'ADMIN';
+
 // Redirect to login if not authenticated
 export const requireAuth = () => {
   if (!isAuthenticated()) {
+    window.location.href = '/login';
+    return false;
+  }
+  return true;
+};
+
+export const requireAdmin = () => {
+  if (!isAuthenticated() || !isAdmin()) {
     window.location.href = '/login';
     return false;
   }
@@ -88,23 +97,25 @@ export const authAPI = {
       body: JSON.stringify(userData),
     }),
   
-  logout: () => 
-    apiRequest('/auth/logout', {
-      method: 'POST',
-    }),
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    return Promise.resolve('logged-out');
+  },
 };
 
 // Quiz API calls
 export const quizAPI = {
-  createQuiz: (category, numQ, title) => {
-    const params = new URLSearchParams({
-      category: category,
-      numQ: numQ.toString(),
-      title: title
-    });
-    console.log('Creating quiz with params:', params.toString());
-    return apiRequest(`/quiz/create?${params}`, {
+  getAllQuizzes: () => {
+    console.log('Getting all quizzes');
+    return apiRequest('/quiz/list');
+  },
+  
+
+  createFullQuiz: (quizPayload) => {
+    return apiRequest(`/quiz/create-full`, {
       method: 'POST',
+      body: JSON.stringify(quizPayload),
     });
   },
   

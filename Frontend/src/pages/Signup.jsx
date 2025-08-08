@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('STUDENT');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -15,12 +15,12 @@ const Signup = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await authAPI.register({ name, email, password });
-      if (response && response.token) {
-        localStorage.setItem('token', response.token);
-        navigate('/');
+      const result = await authAPI.register({ username, password, role });
+      if (typeof result === 'string' && result.toLowerCase().includes('success')) {
+        navigate('/login');
       } else {
-        setError('Signup failed. Please try again.');
+        // In case backend returns JSON in the future
+        navigate('/login');
       }
     } catch (err) {
       setError('Signup failed. Please try again.');
@@ -36,22 +36,12 @@ const Signup = () => {
         {error && <div className="mb-4 text-red-600 text-center">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Name</label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Username</label>
             <input
               type="text"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -64,6 +54,17 @@ const Signup = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Role</label>
+            <select
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="STUDENT">Student</option>
+              <option value="ADMIN">Instructor/Admin</option>
+            </select>
           </div>
           <button
             type="submit"

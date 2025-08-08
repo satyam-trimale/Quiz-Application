@@ -1,26 +1,42 @@
 package com.example.quizapp.service;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
 import com.example.quizapp.dao.QuestionDao;
 import com.example.quizapp.dao.QuizDao;
 import com.example.quizapp.model.Question;
 import com.example.quizapp.model.QuestionWrapper;
 import com.example.quizapp.model.Quiz;
 import com.example.quizapp.model.Response;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class QuizService {
+    private static final Logger log = LoggerFactory.getLogger(QuizService.class);
     @Autowired
     QuizDao quizDao;
     @Autowired
     QuestionDao questionDao;
+
+    public ResponseEntity<List<Quiz>> getAllQuizzes() {
+        try {
+            List<Quiz> quizzes = quizDao.findAll();
+            return new ResponseEntity<>(quizzes, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Failed to fetch quizzes", e);
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.BAD_REQUEST);
+        }
+    }
 
     public ResponseEntity<String> createQuiz(String category, int numQ, String title) {
 
@@ -29,9 +45,47 @@ public class QuizService {
         Quiz quiz = new Quiz();
         quiz.setTitle(title);
         quiz.setQuestions(questions);
-        quizDao.save(quiz);
+        Quiz savedQuiz = quizDao.save(quiz);
 
-        return new ResponseEntity<>("success", HttpStatus.CREATED);
+        return new ResponseEntity<>(savedQuiz.getId().toString(), HttpStatus.CREATED);
+    }
+
+    public ResponseEntity<String> createFullQuiz(Map<String, Object> payload, Principal principal) {
+        try {
+            String title = (String) payload.getOrDefault("title", "");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> questionsData = (List<Map<String, Object>>) payload.getOrDefault("questions", new ArrayList<>());
+
+            if (title.isBlank() || questionsData.isEmpty()) {
+                return new ResponseEntity<>("Invalid payload", HttpStatus.BAD_REQUEST);
+            }
+
+            List<Question> questions = new ArrayList<>();
+            for (Map<String, Object> q : questionsData) {
+                Question question = new Question();
+                question.setQuestionTitle((String) q.getOrDefault("questionTitle", ""));
+                question.setOption1((String) q.getOrDefault("option1", ""));
+                question.setOption2((String) q.getOrDefault("option2", ""));
+                question.setOption3((String) q.getOrDefault("option3", ""));
+                question.setOption4((String) q.getOrDefault("option4", ""));
+                question.setRightAnswer((String) q.getOrDefault("rightAnswer", ""));
+                question.setDifficultyLevel((String) q.getOrDefault("difficultyLevel", ""));
+                question.setCategory((String) q.getOrDefault("category", ""));
+                questions.add(questionDao.save(question));
+            }
+
+            Quiz quiz = new Quiz();
+            quiz.setTitle(title);
+            quiz.setQuestions(questions);
+            if (principal != null) {
+                quiz.setCreatedBy(principal.getName());
+            }
+            Quiz savedQuiz = quizDao.save(quiz);
+            return new ResponseEntity<>(savedQuiz.getId().toString(), HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("Failed to create full quiz", e);
+            return new ResponseEntity<>("Failed to create quiz", HttpStatus.BAD_REQUEST);
+        }
     }
 
     public ResponseEntity<List<QuestionWrapper>> getQuizQuestions(Integer id) {

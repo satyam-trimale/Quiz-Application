@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCard from '../components/QuizCard';
+import { isAdmin } from '../services/api';
 
 const Home = () => {
   const navigate = useNavigate();
+  const admin = isAdmin();
   
   // Mock data for featured quizzes
   const featuredQuizzes = [
@@ -77,12 +79,14 @@ const Home = () => {
             >
               Browse Quizzes
             </button>
-            <button 
-              onClick={() => navigate('/create-quiz')}
-              className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-            >
-              Create Quiz
-            </button>
+            {admin && (
+              <button 
+                onClick={() => navigate('/create-quiz')}
+                className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Create Quiz
+              </button>
+            )}
           </div>
         </div>
       </section>

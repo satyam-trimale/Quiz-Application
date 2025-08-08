@@ -18,16 +18,13 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.example.quizapp.security.JwtAuthenticationFilter;
-import com.example.quizapp.service.CustomUserDetailsService;
 
 @Configuration
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.userDetailsService = userDetailsService;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -37,10 +34,14 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())  // Enable CORS
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // open login/signup
-                        .requestMatchers("/api/question/**").permitAll()  // open question endpoints
-                        .requestMatchers("/api/quiz/**").permitAll()  // open quiz endpoints
-                        .anyRequest().authenticated()                // all other APIs secured
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // Student accessible endpoints (permit all, evaluation/submit is public but can read token if present)
+                        .requestMatchers("/api/quiz/list", "/api/quiz/get/**", "/api/quiz/submit/**").permitAll()
+                        // Admin-only endpoints
+                        .requestMatchers("/api/question/add", "/api/quiz/create", "/api/quiz/create-full").hasRole("ADMIN")
+                        // Question browsing is public
+                        .requestMatchers("/api/question/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // ✅ Add JWT filter
                 .httpBasic(Customizer.withDefaults());
